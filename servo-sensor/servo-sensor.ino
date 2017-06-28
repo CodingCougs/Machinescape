@@ -40,7 +40,7 @@ void loop() {
   inches = checkEnv();
   
   checkErrors(inches);
-  
+
 } 
 
 void debug(String msg){
@@ -77,7 +77,7 @@ long checkEnv(){
 
 void checkErrors(long value){
   int i;
-  long inches;
+  
   int castedTarget;
   castedTarget = (int) target;
     
@@ -99,25 +99,31 @@ void checkErrors(long value){
       memset(values,-1,sizeof(values));
     }
   
+    servorState();
+
+ }
+
+ 
+ void servorState(){
+  long inches;
   if(values[2] != -1){
     inches = target;
     
    if (inches <= 12 && inches >= 0) {
     // Aggressive
-    Move( 10, 170, 5);
+    Move( 0, 160, 10);
      
   } else if (inches > 12 && inches <= 24) {
     // Scared
-    Move(160,170, 3);
+    Move(30,60, 3.5);
    
   } else {
     // Default (Relaxed)
-    Move( 10, 20, 2.5);  
+    Move( 110, 140, 1);  
      
       }
    memset(values,-1,sizeof(values)); 
     }
-
  }
 
 
