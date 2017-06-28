@@ -1,100 +1,162 @@
-
 #include <Servo.h> 
- 
- const int trigPin = 6;
- const int echoPin = 7;
 
- // create servo object to control a servo
- // a maximum of eight servo objects can be created
-Servo myservo; 
-                 
-// variable to store the servo position 
-int pos = 0;    
+Servo myservo;  // create servo object to control a servo 
+                // a maximum of eight servo objects can be created 
 
-void setup() {
-  // initialize serial communication:
+int pos = 0;    // variable to store the servo position
+float deg = 0.0;
+float inc = 0.06;   // Moter Incrementer
+boolean forward =  true;
+boolean goodToGo = false;
+long target = 5;
+long values[3] = {-1, -1, -1};
+
+//PIN Definitions
+const int trigPin = 6;
+const int echoPin = 7;
+const int servoPin = 9;
+#define aggressive 3;
+#define afraid 2;
+#define calm 1;
+
+void setup() 
+{ 
   Serial.begin(9600);
-  
-// attaches the servo on pin 9 to the servo object
-  myservo.attach(9);  
-  
+  myservo.attach(servoPin);  // attaches the servo on pin 9 to the servo object 
+
+  debug("Inital Value: ");
+
+  // Set Motor to starting state
+  if ( myservo.read() != 0) {
+    myservo.write(0);
+  }
+
+  debug("Motor Should be 0, reads: ");
+
 }
 
-void loop()
-{
-
-  long duration, inches, cm;
+void loop() {
+  long inches;
+  inches = checkEnv();
   
- 
+  checkErrors(inches);
+  
+} 
+
+void debug(String msg){
+    Serial.print(msg);
+    Serial.println( myservo.read());
+}
+
+long checkEnv(){
+  
+  long duration, inches, cm;
+
   pinMode(trigPin, OUTPUT);
   digitalWrite(trigPin, LOW);
-  delayMicroseconds(2);
+  delayMicroseconds(5);
   digitalWrite(trigPin, HIGH);
-  delayMicroseconds(10);
+  delayMicroseconds(15);
   digitalWrite(trigPin, LOW);
-  
-  // Read the signal from the sensor: a HIGH pulse whose
-  // duration is the time (in microseconds) from the sending
-  // of the ping to the reception of its echo off of an object.
   pinMode(echoPin, INPUT);
   duration = pulseIn(echoPin, HIGH);
-  
-  // convert the time into a distance
+
+  // Converts microseconds to inches and cm
   inches = microsecondsToInches(duration);
   cm = microsecondsToCentimeters(duration);
-  
-  //Tell the Arduino to print the measurement in the serial console
+
+  // Prints output
   Serial.print(inches);
   Serial.print("in, ");
   Serial.print(cm);
   Serial.print("cm");
   Serial.println();
-  
-  // This if-else statement tells the Arduino at what distance 
-  // it should trigger the servo, what the servo should do,
-  // and what it should do if the distance is too far away.
-   if (inches <= 24)  {sweep(2);
-     
-   }
-   else if (inches >= 24) {myservo.write(pos);
-   }
-   
-   // Tell the Arduino to wait 0.10 seconds before pinging the 
-   // Ultrasonic Sensor again.
-   delay(100);
+
+  return inches;
 }
 
-// Converts the microseconds reading to Inches
+void checkErrors(long value){
+  int i;
+  long inches;
+  int castedTarget;
+  castedTarget = (int) target;
+    
+    if(values[0] == -1){
+      target = value;
+      values[0] = target;
+    }    
+    else if((value >= target-1) && (value <= target+1)){
+
+      for (i = 1;  i < 3; i++){
+
+        if(values[i] == -1){
+          values[i] = value;
+        }
+      }
+    }
+    else{
+      //Clear array
+      memset(values,-1,sizeof(values));
+    }
+  
+  if(values[2] != -1){
+    inches = target;
+    
+   if (inches <= 12 && inches >= 0) {
+    // Aggressive
+    Move( 10, 170, 5);
+     
+  } else if (inches > 12 && inches <= 24) {
+    // Scared
+    Move(160,170, 3);
+   
+  } else {
+    // Default (Relaxed)
+    Move( 10, 20, 2.5);  
+     
+      }
+   memset(values,-1,sizeof(values)); 
+    }
+
+ }
+
+
 long microsecondsToInches(long microseconds)
 {
-
   return microseconds / 74 / 2;
 }
 
-//Converts the Microseconds Reading to Centimeters
 long microsecondsToCentimeters(long microseconds)
 {
-
   return microseconds / 29 / 2;
 }
 
-//This sub-routein is what dictates the movement of the servo
-void sweep(int NUM_OF_CYCLES) 
-  
-{ 
-// Tells the Arduino to start this loop at 0 and incriment it by 1
-// each time the loop completes. This is how the Arduino knows to 
-// stop the loop when a specific number of the Sweep routein has been ran.
-  for (int j=0; j<NUM_OF_CYCLES; j++)
-   
- for (pos = 0; pos <= 180; pos += 1) { // goes from 0 degrees to 180 degrees
-    // in steps of 1 degree
-    myservo.write(pos);              // tell servo to go to position in variable 'pos'
-    delay(15);                       // waits 15ms for the servo to reach the position
-  }
-  for (pos = 180; pos >= 0; pos -= 1) { // goes from 180 degrees to 0 degrees
-    myservo.write(pos);              // tell servo to go to position in variable 'pos'
-    delay(15);                       // waits 15ms for the servo to reach the position
+void Move( int lowerRange, int UpperRange, float inc){
+
+  pos = myservo.read();
+
+  if (forward){
+    //debug("Pos is: ");
+    deg += inc;
+    myservo.write(deg);
   }
 
-} 
+  if (deg >= UpperRange) {
+    forward = false;
+    deg = UpperRange;
+    myservo.write(deg);
+  }
+
+  if (!forward) {
+    //debug("Pos is: ");
+    deg -= inc;
+    myservo.write(deg);
+  }
+
+  if (deg <= lowerRange) {
+    forward = true; 
+    deg = lowerRange;
+    myservo.write(deg);
+  }
+ 
+}
