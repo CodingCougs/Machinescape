@@ -9,7 +9,7 @@ float inc = 0.06;   // Moter Incrementer
 boolean forward =  true;
 boolean goodToGo = false;
 long target = 5;
-long values[3] = {-1, -1, -1};
+long values[10] = {-1, -1, -1,-1,-1,-1,-1,-1,-1,-1};
 
 //PIN Definitions
 const int trigPin = 6;
@@ -65,20 +65,22 @@ long checkEnv(){
   inches = microsecondsToInches(duration);
   cm = microsecondsToCentimeters(duration);
 
-  // Prints output
-  Serial.print(inches);
-  Serial.print("in, ");
-  Serial.print(cm);
-  Serial.print("cm");
-  Serial.println();
+   // Prints output
+//   Serial.print(inches);
+//   Serial.print("in, ");
+//   Serial.print(cm);
+//   Serial.print("cm");
+//   Serial.println();
+   delay(10);
 
   return inches;
 }
 
 void checkErrors(long value){
-  int i;
-  
-  int castedTarget;
+
+  int i,
+      castedTarget;
+
   castedTarget = (int) target;
     
     if(values[0] == -1){
@@ -87,7 +89,7 @@ void checkErrors(long value){
     }    
     else if((value >= target-1) && (value <= target+1)){
 
-      for (i = 1;  i < 3; i++){
+      for (i = 1;  i < 10; i++){
 
         if(values[i] == -1){
           values[i] = value;
@@ -96,7 +98,7 @@ void checkErrors(long value){
     }
     else{
       //Clear array
-      memset(values,-1,sizeof(values));
+      memset(values, -1, sizeof(values));
     }
   
     servorState();
@@ -106,20 +108,23 @@ void checkErrors(long value){
  
  void servorState(){
   long inches;
-  if(values[2] != -1){
+  if(values[9] != -1){
     inches = target;
     
    if (inches <= 12 && inches >= 0) {
     // Aggressive
-    Move( 0, 160, 10);
+    Move( 10, 100, 10);
+    Serial.println("Aggressive");
      
   } else if (inches > 12 && inches <= 24) {
     // Scared
-    Move(30,60, 3.5);
+    Serial.println("Scared");
+    Move(15,20, 4);
    
   } else {
     // Default (Relaxed)
-    Move( 110, 140, 1);  
+    Serial.println("calm");
+    Move( 60, 90, .25);  
      
       }
    memset(values,-1,sizeof(values)); 
